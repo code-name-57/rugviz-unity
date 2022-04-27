@@ -6,16 +6,27 @@ using System.Collections.Generic;
 using UnityEngine.Networking;
 using System;
 using System.Collections;
+
+[Serializable]
+public class LoginCredentials{
+    public string username;
+    public string password;
+}
+
+[Serializable]
+public class LoginToken{
+    public string token;
+}
 public class APIConnection : Singleton<APIConnection>
 {
-    public string basePath = "http://rugviz.herokuapp.com/rest";
-    // public string basePath = "http://192.168.0.118:8000/rest";
+    // public string basePath = "http://rugviz.herokuapp.com/";
+    private string basePath = "http://127.0.0.1:8000/";
 
     public Dictionary<int, Collection> AllCollections;
     
 	private RequestHelper currentRequest;
 
-
+	private LoginToken loginToken;
 	private void LogMessage(string title, string message) {
 #if UNITY_EDITOR
 		EditorUtility.DisplayDialog (title, message, "Ok");
@@ -26,7 +37,8 @@ public class APIConnection : Singleton<APIConnection>
     // Start is called before the first frame update
     void Start()
     {
-        Get();
+        // Get();
+        Login();
     }
 
     // Update is called once per frame
@@ -44,66 +56,90 @@ public class APIConnection : Singleton<APIConnection>
 		}
 	}
 
+	public void Login(){
+        currentRequest = new RequestHelper
+        {
+            Uri = basePath + "api-token-auth",
+            Body = new LoginCredentials{
+				username="admin",
+				password="admin"
+			},
+			EnableDebug = true
 
+        };
+
+		RestClient.Post<LoginToken>(currentRequest)
+		.Then(res => {
+			this.LogMessage("Success",res.token);
+            loginToken = res;
+            Get();
+        })
+		.Catch(err => this.LogMessage("Error", err.Message));
+        // RestClient.GetArray<Brand>(basePath + "api-token-auth").Then(res => {
+		// 	// this.LogMessage("Brandss", JsonHelper.ArrayToJsonString<Brand>(res, true));
+		// 	Brand.AddBrands(res);
+		// }).Catch(err => this.LogMessage("Get Brands : Error", err.Message));
+
+	}
 	public void Get(){
 
 		// We can add default request headers for all requests
-		// RestClient.DefaultRequestHeaders["Authorization"] = "Bearer ...";
+		RestClient.DefaultRequestHeaders["Authorization"] = "Token "+loginToken.token;
 
 		RequestHelper requestOptions = null;
 
-		RestClient.GetArray<Brand>(basePath + "/Brands").Then(res => {
-			// this.LogMessage("Brandss", JsonHelper.ArrayToJsonString<Brand>(res, true));
+		RestClient.GetArray<Brand>(basePath + "rest/Brands").Then(res => {
+			this.LogMessage("Brandss", JsonHelper.ArrayToJsonString<Brand>(res, true));
 			Brand.AddBrands(res);
-		}).Catch(err => this.LogMessage("Error", err.Message));
+		}).Catch(err => this.LogMessage("Get Brands : Error", err.Message));
 
-        RestClient.GetArray<Size>(basePath + "/Sizes").Then(res => {
-			// this.LogMessage("Sizes", JsonHelper.ArrayToJsonString<Size>(res, true));
+        RestClient.GetArray<Size>(basePath + "rest/Sizes").Then(res => {
+			this.LogMessage("Sizes", JsonHelper.ArrayToJsonString<Size>(res, true));
 			Size.AddSizes(res);
-		}).Catch(err => this.LogMessage("Error", err.Message));
+		}).Catch(err => this.LogMessage("Get Sizes : Error", err.Message));
 
-        RestClient.GetArray<Colour>(basePath + "/Colors").Then(res => {
-			// this.LogMessage("Colors", JsonHelper.ArrayToJsonString<Colour>(res, true));
+        RestClient.GetArray<Colour>(basePath + "rest/Colors").Then(res => {
+			this.LogMessage("Colors", JsonHelper.ArrayToJsonString<Colour>(res, true));
 			Colour.AddColors(res);
-		}).Catch(err => this.LogMessage("Error", err.Message));
+		}).Catch(err => this.LogMessage("Get Colors : Error", err.Message));
      
-		RestClient.GetArray<Design>(basePath + "/Designs").Then(res => {
-			// this.LogMessage("Designs", JsonHelper.ArrayToJsonString<Design>(res, true));
+		RestClient.GetArray<Design>(basePath + "rest/Designs").Then(res => {
+			this.LogMessage("Designs", JsonHelper.ArrayToJsonString<Design>(res, true));
 			Design.AddDesigns(res);
 		}).Catch(err => this.LogMessage("Error", err.Message));
 
 
-		RestClient.GetArray<Collection>(basePath + "/Collections").Then(res => {
-			// this.LogMessage("Collections", JsonHelper.ArrayToJsonString<Collection>(res, true));
+        RestClient.GetArray<Collection>(basePath + "rest/Collections").Then(res => {
+			this.LogMessage("Collections", JsonHelper.ArrayToJsonString<Collection>(res, true));
 			Collection.AddCollections(res);
 		}).Catch(err => this.LogMessage("Error", err.Message));
 
 
-		RestClient.GetArray<Carpet>(basePath + "/Carpets").Then(res => {
-			// this.LogMessage("Carpets", JsonHelper.ArrayToJsonString<Carpet>(res, true));
+		RestClient.GetArray<Carpet>(basePath + "rest/Carpets").Then(res => {
+			this.LogMessage("Carpets", JsonHelper.ArrayToJsonString<Carpet>(res, true));
 			Carpet.ClearAndAddCarpets(res);
 
-            RugTileManager.Instance.ShowRugTiles(Carpet.CurrentCarpets);
+            // RugTileManager.Instance.ShowRugTiles(Carpet.CurrentCarpets);
 
 		}).Catch(err => this.LogMessage("Error", err.Message));
 
-		RestClient.GetArray<FloorType>(basePath + "/FloorTypes").Then(res => {
-			// this.LogMessage("Floor Types", JsonHelper.ArrayToJsonString<FloorType>(res, true));
+		RestClient.GetArray<FloorType>(basePath + "rugviz/rest/FloorTypes").Then(res => {
+			this.LogMessage("Floor Types", JsonHelper.ArrayToJsonString<FloorType>(res, true));
 			FloorType.AddFloorTypes(res);
 		}).Catch(err => this.LogMessage("Error", err.Message));
 
-        RestClient.GetArray<FloorTexture>(basePath + "/FloorTextures").Then(res => {
-			// this.LogMessage("Floor Textures", JsonHelper.ArrayToJsonString<FloorTexture>(res, true));
+        RestClient.GetArray<FloorTexture>(basePath + "rugviz/rest/FloorTextures").Then(res => {
+			this.LogMessage("Floor Textures", JsonHelper.ArrayToJsonString<FloorTexture>(res, true));
 			FloorTexture.AddFloorTextures(res);
 
-			FloorTileManager.Instance.ShowFloorTiles(FloorTexture.AllFloorTextures);
+			// FloorTileManager.Instance.ShowFloorTiles(FloorTexture.AllFloorTextures);
 		}).Catch(err => this.LogMessage("Error", err.Message));
 
-		RestClient.GetArray<EnvColor>(basePath + "/EnvColors").Then(res => {
+		RestClient.GetArray<EnvColor>(basePath + "rugviz/rest/EnvColors").Then(res => {
 			EnvColor.AddColors(res);
 			this.LogMessage("Env Colors", JsonHelper.ArrayToJsonString<EnvColor>(res, true));
 			// FloorTexture.AddFloorTextures(res);
-			ColorTileManager.Instance.ShowColorTiles(EnvColor.AllColors);
+			// ColorTileManager.Instance.ShowColorTiles(EnvColor.AllColors);
 			// FloorTileManager.Instance.ShowFloorTiles(FloorTexture.AllFloorTextures);
 		}).Catch(err => Debug.Log(err));
 	}
