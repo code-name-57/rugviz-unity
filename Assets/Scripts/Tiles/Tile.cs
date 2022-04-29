@@ -9,7 +9,7 @@ using Models;
 
 public abstract class Tile :  MonoBehaviour, IPointerClickHandler, IDragHandler, IEndDragHandler, IBeginDragHandler
 {
-    public ScrollRect scrollRect;
+    private ScrollRect scrollRect;
     
     bool moved = false;
     
