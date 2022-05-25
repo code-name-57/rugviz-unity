@@ -47,6 +47,7 @@ public class FloorTile :  Tile
             }
         }));
     }
+    
     public void OnEnable(){
         StartCoroutine(GetTexture());
 

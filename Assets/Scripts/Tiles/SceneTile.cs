@@ -4,11 +4,17 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Networking;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
 using Models;
 
 public class SceneTile :  Tile
-{        
+{
+
+    public GameObject panel0;
+    public GameObject panel1;
+
+
     public RawImage image;
 
     public Text tileText;
@@ -16,7 +22,7 @@ public class SceneTile :  Tile
     private SceneInfo sceneInfo;
 
     public void ChangeScene(){
-        // SceneManager.LoadScene(sceneInfo.name, LoadSceneMode.Single);
+        SceneManager.LoadScene(sceneInfo.name, LoadSceneMode.Additive);
         Debug.Log("Simulated scene change : " + sceneInfo.name);
     }
 

@@ -81,6 +81,76 @@ public class APIConnection : Singleton<APIConnection>
 		// }).Catch(err => this.LogMessage("Get Brands : Error", err.Message));
 
 	}
+
+/*   TEMP CODE    */
+	public void PostImage(){
+
+	}
+
+	public void PostSceneImage(int fav_item_id){
+		RestClient.DefaultRequestHeaders["Authorization"] = "Token "+loginToken.token;
+		// lists[0].id += 10; 
+
+		currentRequest = new RequestHelper {
+			Uri = basePath + "rest/FavoriteList/",
+			// Params = new Dictionary<string, string> {
+			// 	{ "param1", "value 1" },
+			// 	{ "param2", "value 2" }
+			// },
+			Body = lists[0],
+			EnableDebug = true
+		};
+		RestClient.Post<FavoriteList>(currentRequest)
+		.Then(res => {
+
+			// And later we can clear the default query string params for all requests
+			RestClient.ClearDefaultParams();
+
+			this.LogMessage("Success", JsonUtility.ToJson(res, true));
+		})
+		.Catch(err => this.LogMessage("Error", err.Message));
+	}
+
+	IEnumerator GetTexture(SceneImage scimg)
+	{
+		Debug.Log(scimg.image_file);
+		UnityWebRequest www = UnityWebRequestTexture.GetTexture(scimg.image_file);
+		yield return www.SendWebRequest();
+
+		Texture myTexture = DownloadHandlerTexture.GetContent(www);
+		scimg.texture = myTexture;
+	}
+
+	public void DownloadSceneImages(FavoriteList[] lists){
+		Debug.Log("LISTS : " + JsonHelper.ArrayToJsonString<FavoriteList>(lists, true));
+		foreach( FavoriteList list in lists)
+		{
+			Debug.Log("ITEMS : " + JsonHelper.ArrayToJsonString<FavoriteItem>(list.favoriteitem_set, true));
+
+			foreach ( FavoriteItem item in list.favoriteitem_set)
+			{
+				Debug.Log(item);
+				Debug.Log("IMAGES : " + JsonHelper.ArrayToJsonString<SceneImage>(item.sceneimage_set, true));
+
+				foreach ( SceneImage img in item.sceneimage_set )
+				{
+					StartCoroutine(GetTexture(img));
+				}
+			}
+		}
+
+	}
+/*   TEMP CODE    */
+
+	// public void DownloadSceneImages2(SceneImage[] images){
+	// 	foreach(SceneImage img in images)
+	// 	{
+	// 		Debug.Log("Scene Image : " + img);
+	// 	}
+
+
+	// }
+
 	public void Get(){
 
 		// We can add default request headers for all requests
@@ -93,55 +163,67 @@ public class APIConnection : Singleton<APIConnection>
 			Brand.AddBrands(res);
 		}).Catch(err => this.LogMessage("Get Brands : Error", err.Message));
 
-        RestClient.GetArray<Size>(basePath + "rest/Sizes").Then(res => {
-			this.LogMessage("Sizes", JsonHelper.ArrayToJsonString<Size>(res, true));
-			Size.AddSizes(res);
-		}).Catch(err => this.LogMessage("Get Sizes : Error", err.Message));
+		RestClient.GetArray<FavoriteList>(basePath + "rest/FavoriteList").Then(res => {
+			// Debug.Log("RESPONSE : " + res );
+			this.LogMessage("Favorite Lists", JsonHelper.ArrayToJsonString<FavoriteList>(res, true));
+			DownloadSceneImages(res);
+			PostFovuriteList(res);
+		}).Catch(err => this.LogMessage("Favorite Lists : Error", err.Message));
 
-        RestClient.GetArray<Colour>(basePath + "rest/Colors").Then(res => {
-			this.LogMessage("Colors", JsonHelper.ArrayToJsonString<Colour>(res, true));
-			Colour.AddColors(res);
-		}).Catch(err => this.LogMessage("Get Colors : Error", err.Message));
+		RestClient.GetArray<SceneImage>(basePath + "rest/SceneImage").Then(res => {
+			this.LogMessage("Scene Image", JsonHelper.ArrayToJsonString<SceneImage>(res, true));
+			// DownloadSceneImages2(res);
+		}).Catch(err => this.LogMessage("Favorite Lists : Error", err.Message));
+
+        // RestClient.GetArray<Size>(basePath + "rest/Sizes").Then(res => {
+		// 	this.LogMessage("Sizes", JsonHelper.ArrayToJsonString<Size>(res, true));
+		// 	Size.AddSizes(res);
+		// }).Catch(err => this.LogMessage("Get Sizes : Error", err.Message));
+
+        // RestClient.GetArray<Colour>(basePath + "rest/Colors").Then(res => {
+		// 	this.LogMessage("Colors", JsonHelper.ArrayToJsonString<Colour>(res, true));
+		// 	Colour.AddColors(res);
+		// }).Catch(err => this.LogMessage("Get Colors : Error", err.Message));
      
-		RestClient.GetArray<Design>(basePath + "rest/Designs").Then(res => {
-			this.LogMessage("Designs", JsonHelper.ArrayToJsonString<Design>(res, true));
-			Design.AddDesigns(res);
-		}).Catch(err => this.LogMessage("Error", err.Message));
+		// RestClient.GetArray<Design>(basePath + "rest/Designs").Then(res => {
+		// 	this.LogMessage("Designs", JsonHelper.ArrayToJsonString<Design>(res, true));
+		// 	Design.AddDesigns(res);
+		// }).Catch(err => this.LogMessage("Error", err.Message));
 
 
-        RestClient.GetArray<Collection>(basePath + "rest/Collections").Then(res => {
-			this.LogMessage("Collections", JsonHelper.ArrayToJsonString<Collection>(res, true));
-			Collection.AddCollections(res);
-		}).Catch(err => this.LogMessage("Error", err.Message));
+        // RestClient.GetArray<Collection>(basePath + "rest/Collections").Then(res => {
+		// 	this.LogMessage("Collections", JsonHelper.ArrayToJsonString<Collection>(res, true));
+		// 	Collection.AddCollections(res);
+		// }).Catch(err => this.LogMessage("Error", err.Message));
 
 
-		RestClient.GetArray<Carpet>(basePath + "rest/Carpets").Then(res => {
-			this.LogMessage("Carpets", JsonHelper.ArrayToJsonString<Carpet>(res, true));
-			Carpet.ClearAndAddCarpets(res);
+		// RestClient.GetArray<Carpet>(basePath + "rest/Carpets").Then(res => {
+		// 	this.LogMessage("Carpets", JsonHelper.ArrayToJsonString<Carpet>(res, true));
+		// 	Carpet.ClearAndAddCarpets(res);
 
-            // RugTileManager.Instance.ShowRugTiles(Carpet.CurrentCarpets);
+        //     // RugTileManager.Instance.ShowRugTiles(Carpet.CurrentCarpets);
 
-		}).Catch(err => this.LogMessage("Error", err.Message));
+		// }).Catch(err => this.LogMessage("Error", err.Message));
 
-		RestClient.GetArray<FloorType>(basePath + "rugviz/rest/FloorTypes").Then(res => {
-			this.LogMessage("Floor Types", JsonHelper.ArrayToJsonString<FloorType>(res, true));
-			FloorType.AddFloorTypes(res);
-		}).Catch(err => this.LogMessage("Error", err.Message));
+		// RestClient.GetArray<FloorType>(basePath + "rugviz/rest/FloorTypes").Then(res => {
+		// 	this.LogMessage("Floor Types", JsonHelper.ArrayToJsonString<FloorType>(res, true));
+		// 	FloorType.AddFloorTypes(res);
+		// }).Catch(err => this.LogMessage("Error", err.Message));
 
-        RestClient.GetArray<FloorTexture>(basePath + "rugviz/rest/FloorTextures").Then(res => {
-			this.LogMessage("Floor Textures", JsonHelper.ArrayToJsonString<FloorTexture>(res, true));
-			FloorTexture.AddFloorTextures(res);
+        // RestClient.GetArray<FloorTexture>(basePath + "rugviz/rest/FloorTextures").Then(res => {
+		// 	this.LogMessage("Floor Textures", JsonHelper.ArrayToJsonString<FloorTexture>(res, true));
+		// 	FloorTexture.AddFloorTextures(res);
 
-			// FloorTileManager.Instance.ShowFloorTiles(FloorTexture.AllFloorTextures);
-		}).Catch(err => this.LogMessage("Error", err.Message));
+		// 	// FloorTileManager.Instance.ShowFloorTiles(FloorTexture.AllFloorTextures);
+		// }).Catch(err => this.LogMessage("Error", err.Message));
 
-		RestClient.GetArray<EnvColor>(basePath + "rugviz/rest/EnvColors").Then(res => {
-			EnvColor.AddColors(res);
-			this.LogMessage("Env Colors", JsonHelper.ArrayToJsonString<EnvColor>(res, true));
-			// FloorTexture.AddFloorTextures(res);
-			// ColorTileManager.Instance.ShowColorTiles(EnvColor.AllColors);
-			// FloorTileManager.Instance.ShowFloorTiles(FloorTexture.AllFloorTextures);
-		}).Catch(err => Debug.Log(err));
+		// RestClient.GetArray<EnvColor>(basePath + "rugviz/rest/EnvColors").Then(res => {
+		// 	EnvColor.AddColors(res);
+		// 	this.LogMessage("Env Colors", JsonHelper.ArrayToJsonString<EnvColor>(res, true));
+		// 	// FloorTexture.AddFloorTextures(res);
+		// 	// ColorTileManager.Instance.ShowColorTiles(EnvColor.AllColors);
+		// 	// FloorTileManager.Instance.ShowFloorTiles(FloorTexture.AllFloorTextures);
+		// }).Catch(err => Debug.Log(err));
 	}
 
 }
